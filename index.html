@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>연소 실험 안전교육 게임</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFF7EA;
+    --bg-deep: #FDEACB;
+    --panel: #FFFFFF;
+    --ink: #2A1D0F;
+    --ink-soft: #8A6F4A;
+    --line: #F0DDB4;
+    --danger: #E4483F;
+    --danger-deep: #B8342C;
+    --safe: #2E9E5B;
+    --safe-deep: #1F7A44;
+    --caution: #F5B301;
+    --caution-deep: #C98E00;
+    --info: #3E7CB1;
+    --info-deep: #2B5D87;
+    --card-shadow: 0 10px 28px rgba(90,55,10,0.10);
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#1D160C; --bg-deep:#140F08; --panel:#2B2013;
+      --ink:#F7EBD3; --ink-soft:#C7AC80; --line:#413018;
+      --card-shadow: 0 10px 28px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#1D160C; --bg-deep:#140F08; --panel:#2B2013;
+    --ink:#F7EBD3; --ink-soft:#C7AC80; --line:#413018;
+    --card-shadow: 0 10px 28px rgba(0,0,0,0.4);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: radial-gradient(1200px 620px at 50% -10%, var(--bg-deep), var(--bg));
+    color: var(--ink); font-family:'Noto Sans KR', sans-serif; line-height:1.62; overflow-x:hidden;
+  }
+  .wrap { max-width: 1060px; margin:0 auto; padding: 26px 18px 64px; }
+
+  header.hero { text-align:center; padding: 14px 12px 22px; }
+  .eyebrow-row { display:flex; justify-content:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  .tag { font-size:0.78rem; color:var(--ink-soft); background:var(--panel); border:1px solid var(--line); padding:5px 12px; border-radius:999px; }
+  h1 { font-family:'Jua', sans-serif; font-weight:400; font-size:clamp(1.5rem, 4.2vw, 2.3rem); margin-bottom:8px; letter-spacing:-0.01em; }
+  h1 .hl { color: var(--danger); }
+  .subhead { color:var(--ink-soft); font-size:0.98rem; max-width:600px; margin:0 auto; }
+
+  /* score bar */
+  .score-bar {
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    background: var(--panel); border:1px solid var(--line); border-radius:18px; box-shadow: var(--card-shadow);
+    padding: 14px 20px; margin: 20px 0 24px;
+  }
+  .score-left { display:flex; align-items:center; gap:10px; }
+  .score-left .trophy { font-size:1.6rem; }
+  .score-left b { font-family:'Jua', sans-serif; font-weight:400; font-size:1.3rem; }
+  .score-track { flex:1; min-width:140px; height:12px; background:var(--line); border-radius:999px; overflow:hidden; }
+  .score-fill { height:100%; width:0%; background: linear-gradient(90deg, var(--caution), var(--danger)); border-radius:999px; transition: width .5s ease; }
+
+  /* mission map */
+  .mission-map { display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  @media (max-width: 760px) { .mission-map { grid-template-columns: repeat(2, 1fr); } }
+  .mission-tile {
+    background: var(--panel); border:2px solid var(--line); border-radius:16px; box-shadow: var(--card-shadow);
+    padding: 14px 12px; text-align:center; cursor:pointer; transition: border-color .2s ease, transform .15s ease;
+  }
+  .mission-tile:hover { transform: translateY(-2px); }
+  .mission-tile.active { border-color: var(--danger); }
+  .mission-tile.cleared { border-color: var(--safe); }
+  .mission-tile .m-icon { font-size:1.7rem; margin-bottom:6px; }
+  .mission-tile .m-title { font-family:'Jua', sans-serif; font-weight:400; font-size:0.92rem; margin-bottom:4px; }
+  .mission-tile .m-score { font-size:0.76rem; color: var(--ink-soft); font-weight:700; }
+  .mission-tile.cleared .m-score { color: var(--safe-deep); }
+
+  h2.section-title { font-family:'Jua', sans-serif; font-weight:400; font-size:1.26rem; margin:0 0 6px; display:flex; align-items:center; gap:8px; }
+  p.section-desc { color:var(--ink-soft); font-size:0.92rem; margin-bottom:18px; max-width:660px; }
+
+  .mission-panel { display:none; background: var(--panel); border:1px solid var(--line); border-radius:20px; box-shadow: var(--card-shadow); padding: 24px 22px; margin-bottom: 30px; }
+  .mission-panel.active { display:block; }
+
+  /* Mission 1: gear select */
+  .gear-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0 18px; }
+  @media (max-width: 700px) { .gear-grid { grid-template-columns: repeat(2, 1fr); } }
+  .gear-item {
+    border:2px solid var(--line); background: var(--bg); border-radius:14px; padding:14px 10px; text-align:center;
+    cursor:pointer; transition: border-color .2s ease, background .2s ease;
+  }
+  .gear-item .g-icon { font-size:1.8rem; margin-bottom:6px; }
+  .gear-item .g-label { font-size:0.82rem; font-weight:700; }
+  .gear-item.selected { border-color: var(--info); background: rgba(62,124,177,0.1); }
+  .gear-item.correct-selected { border-color: var(--safe); background: rgba(46,158,91,0.12); }
+  .gear-item.wrong-selected { border-color: var(--danger); background: rgba(228,72,63,0.12); }
+  .gear-item.missed { border-color: var(--caution); background: rgba(245,179,1,0.1); }
+  .gear-item .g-tag { display:none; margin-top:6px; font-size:0.7rem; font-weight:800; }
+  .gear-item.correct-selected .g-tag, .gear-item.wrong-selected .g-tag, .gear-item.missed .g-tag { display:block; }
+  .gear-item.correct-selected .g-tag { color: var(--safe-deep); }
+  .gear-item.wrong-selected .g-tag { color: var(--danger-deep); }
+  .gear-item.missed .g-tag { color: var(--caution-deep); }
+
+  .game-btn {
+    border:none; border-radius:12px; padding: 11px 24px; font-weight:800; font-family:'Noto Sans KR', sans-serif;
+    font-size:0.92rem; cursor:pointer; background: var(--danger); color:#fff; transition: transform .15s ease, filter .15s ease;
+  }
+  .game-btn:hover:not(:disabled) { filter: brightness(1.06); }
+  .game-btn:active { transform: scale(0.97); }
+  .game-btn:disabled { opacity:0.45; cursor:not-allowed; }
+  .game-btn.secondary { background: var(--info); }
+  .game-btn.ghost { background: transparent; border:1px solid var(--line); color: var(--ink-soft); }
+
+  .mission-feedback { margin-top:14px; font-size:0.88rem; font-weight:700; padding: 12px 14px; border-radius:12px; display:none; }
+  .mission-feedback.show { display:block; }
+  .mission-feedback.good { background: rgba(46,158,91,0.12); color: var(--safe-deep); }
+  .mission-feedback.mid { background: rgba(245,179,1,0.14); color: var(--caution-deep); }
+
+  /* Mission 2 & 4B: ordering game */
+  .order-pool { display:flex; flex-direction:column; gap:10px; margin: 14px 0 18px; }
+  .order-item {
+    border:2px solid var(--line); background: var(--bg); border-radius:12px; padding:12px 14px;
+    display:flex; align-items:center; gap:12px; cursor:pointer; font-size:0.88rem; font-weight:600;
+    transition: border-color .2s ease, background .2s ease, opacity .2s ease;
+  }
+  .order-item .pick-num {
+    flex-shrink:0; width:26px; height:26px; border-radius:50%; background:var(--line); color:var(--ink-soft);
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.8rem;
+  }
+  .order-item.picked { border-color: var(--info); }
+  .order-item.picked .pick-num { background: var(--info); color:#fff; }
+  .order-item.locked-correct { border-color: var(--safe); background: rgba(46,158,91,0.1); }
+  .order-item.locked-wrong { border-color: var(--danger); background: rgba(228,72,63,0.1); }
+  .order-item.disabled { opacity:0.5; pointer-events:none; }
+
+  .order-btn-row { display:flex; gap:10px; flex-wrap:wrap; }
+
+  /* Mission 3: OX cards */
+  .ox-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 16px 0; }
+  @media (max-width: 700px) { .ox-grid { grid-template-columns: 1fr; } }
+  .ox-card { background: var(--bg); border:2px solid var(--line); border-radius:14px; padding: 14px 16px; }
+  .ox-card .ox-desc { font-size:0.87rem; font-weight:700; margin-bottom: 10px; min-height: 40px; }
+  .ox-choice-row { display:flex; gap:8px; }
+  .ox-btn { flex:1; border:none; border-radius:10px; padding:9px 6px; font-size:0.84rem; font-weight:800; cursor:pointer; transition: filter .15s ease; }
+  .ox-btn.safe-btn { background: rgba(46,158,91,0.15); color: var(--safe-deep); }
+  .ox-btn.danger-btn { background: rgba(228,72,63,0.15); color: var(--danger-deep); }
+  .ox-btn:disabled { opacity:0.35; }
+  .ox-card.answered.correct { border-color: var(--safe); }
+  .ox-card.answered.incorrect { border-color: var(--danger); }
+  .ox-fb { margin-top:10px; font-size:0.8rem; color: var(--ink-soft); display:none; text-align:left; }
+  .ox-fb.show { display:block; }
+  .ox-fb b { color: var(--ink); }
+  .ox-tag { display:none; font-size:0.74rem; font-weight:800; margin-top:6px; }
+  .ox-tag.show { display:block; }
+  .ox-tag.ok { color: var(--safe-deep); }
+  .ox-tag.no { color: var(--danger-deep); }
+
+  .ox-score-row { text-align:right; font-size:0.84rem; color: var(--ink-soft); font-weight:700; margin-bottom:6px; }
+
+  /* Mission 4A: mc question */
+  .mc-options { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin: 14px 0; }
+  @media (max-width:560px) { .mc-options { grid-template-columns:1fr; } }
+  .mc-opt { border:2px solid var(--line); background: var(--bg); border-radius:12px; padding:12px 14px; font-size:0.9rem; font-weight:700; cursor:pointer; text-align:left; color: var(--ink); }
+  .mc-opt:hover { border-color: var(--info); }
+  .mc-opt.correct { border-color: var(--safe); background: rgba(46,158,91,0.12); }
+  .mc-opt.wrong { border-color: var(--danger); background: rgba(228,72,63,0.1); }
+  .mc-fb { margin-top: 12px; font-size:0.88rem; padding: 12px 14px; border-radius:12px; background: var(--bg); border:1px solid var(--line); display:none; }
+  .mc-fb.show { display:block; }
+  .mc-fb b { color: var(--danger-deep); }
+
+  .sub-divider { margin: 26px 0 18px; border-top: 1px dashed var(--line); padding-top: 18px; }
+  .sub-title { font-family:'Jua', sans-serif; font-weight:400; font-size:1.02rem; margin-bottom: 6px; }
+
+  /* certificate */
+  .cert-section {
+    margin-top: 12px; background: var(--panel); border:2px solid var(--line); border-radius:22px;
+    box-shadow: var(--card-shadow); padding: 30px 26px; text-align:center;
+    opacity: 0.4; pointer-events:none; transition: opacity .5s ease;
+  }
+  .cert-section.unlocked { opacity:1; pointer-events:auto; }
+  .cert-lock-note { color: var(--ink-soft); font-size:0.88rem; }
+  .cert-body { display:none; }
+  .cert-body.show { display:block; }
+  .cert-emblem { font-size: 3rem; margin-bottom: 10px; }
+  .cert-title { font-family:'Jua', sans-serif; font-weight:400; font-size:1.6rem; margin-bottom: 6px; }
+  .cert-score { font-size:2.2rem; font-weight:900; color: var(--danger); margin: 10px 0; font-family:'Jua', sans-serif; }
+  .cert-rules { text-align:left; max-width: 560px; margin: 18px auto 0; background: var(--bg); border-radius:14px; padding: 18px 20px; }
+  .cert-rules li { font-size:0.88rem; color: var(--ink-soft); margin-bottom:7px; }
+  .cert-rules b { color: var(--ink); }
+  .cert-name { margin-top: 18px; font-size:0.9rem; color: var(--ink-soft); }
+
+  .reset-btn { display:block; margin:30px auto 0; background:transparent; border:1px solid var(--line); color:var(--ink-soft); padding:8px 18px; border-radius:999px; font-size:0.82rem; font-weight:600; cursor:pointer; }
+  .reset-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+  footer { margin-top:40px; text-align:center; color:var(--ink-soft); font-size:0.82rem; padding-top:20px; border-top:1px solid var(--line); }
+  footer .author { font-weight:700; color:var(--ink); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow-row">
+      <span class="tag">초등 6학년 과학 2학기</span>
+      <span class="tag">2단원 물질의 연소</span>
+    </div>
+    <h1>🧯 연소 실험 <span class="hl">안전교육</span> 게임</h1>
+    <p class="subhead">네 가지 미션을 통과하며 알코올램프 사용법과 실험 안전 수칙, 화재 대처법을 익혀 "안전 대장" 인증서를 받아 보자!</p>
+  </header>
+
+  <div class="score-bar">
+    <div class="score-left"><span class="trophy">🏆</span><span>총점: <b id="totalScoreLabel">0</b> / 100</span></div>
+    <div class="score-track"><div class="score-fill" id="scoreFill"></div></div>
+  </div>
+
+  <div class="mission-map" id="missionMap"></div>
+
+  <div id="missionPanels"></div>
+
+  <section class="cert-section" id="certSection">
+    <p class="cert-lock-note" id="certLockNote">네 미션을 모두 마치면 안전 수료증이 열려요.</p>
+    <div class="cert-body" id="certBody">
+      <div class="cert-emblem">🏅</div>
+      <div class="cert-title">연소 실험 안전 대장 인증서</div>
+      <p style="color:var(--ink-soft); font-size:0.9rem;">모든 미션을 완료했어요! 최종 점수는 아래와 같아요.</p>
+      <div class="cert-score" id="certScore">0 / 100</div>
+      <ul class="cert-rules" id="certRules"></ul>
+      <p class="cert-name">제작: <span class="author">박은현</span> 선생님</p>
+    </div>
+  </section>
+
+  <button class="reset-btn" id="resetBtn">🔄 처음부터 다시하기</button>
+
+  <footer>
+    <p>제작: <span class="author">박은현</span> · 초등학교 6학년 과학 2학기 2단원 물질의 연소 안전교육 게임 시뮬레이션</p>
+  </footer>
+</div>
+
+<script>
+/* =========================================================
+   전역 점수 관리
+========================================================= */
+const scores = { m1:0, m2:0, m3:0, m4:0 };
+const cleared = { m1:false, m2:false, m3:false, m4:false };
+
+function updateTotalScore(){
+  const total = Math.round(scores.m1 + scores.m2 + scores.m3 + scores.m4);
+  document.getElementById('totalScoreLabel').textContent = total;
+  document.getElementById('scoreFill').style.width = total + '%';
+  missions.forEach(m => {
+    const tile = document.getElementById('tile-' + m.id);
+    const scoreEl = tile.querySelector('.m-score');
+    scoreEl.textContent = Math.round(scores[m.id]) + ' / 25점';
+    if(cleared[m.id]) tile.classList.add('cleared');
+  });
+  if(cleared.m1 && cleared.m2 && cleared.m3 && cleared.m4){
+    document.getElementById('certSection').classList.add('unlocked');
+    document.getElementById('certLockNote').style.display = 'none';
+    document.getElementById('certBody').classList.add('show');
+    document.getElementById('certScore').textContent = total + ' / 100';
+  }
+}
+
+/* =========================================================
+   미션 맵 / 탭 구성
+========================================================= */
+const missions = [
+  { id:'m1', icon:'🥽', title:'안전 장비 갖추기' },
+  { id:'m2', icon:'🕯️', title:'알코올램프 사용법' },
+  { id:'m3', icon:'⚠️', title:'위험 vs 안전 판단' },
+  { id:'m4', icon:'🧯', title:'화재 대처법' },
+];
+
+const missionMap = document.getElementById('missionMap');
+const missionPanels = document.getElementById('missionPanels');
+
+missions.forEach((m, i) => {
+  const tile = document.createElement('div');
+  tile.className = 'mission-tile' + (i === 0 ? ' active' : '');
+  tile.id = 'tile-' + m.id;
+  tile.innerHTML = `<div class="m-icon">${m.icon}</div><div class="m-title">미션 ${i+1}. ${m.title}</div><div class="m-score">0 / 25점</div>`;
+  tile.addEventListener('click', () => showMission(m.id));
+  missionMap.appendChild(tile);
+});
+
+function showMission(id){
+  document.querySelectorAll('.mission-tile').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.mission-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tile-' + id).classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+}
+
+/* =========================================================
+   미션 1 — 안전 장비 갖추기
+========================================================= */
+const gearItems = [
+  { label:'보안경 착용', icon:'🥽', ok:true },
+  { label:'긴 머리 묶기', icon:'🎀', ok:true },
+  { label:'실험용 앞치마 입기', icon:'🥼', ok:true },
+  { label:'젖은 수건 미리 준비', icon:'🧻', ok:true },
+  { label:'풀어헤친 긴 머리', icon:'💇‍♀️', ok:false },
+  { label:'헐렁한 긴 소매 옷', icon:'👘', ok:false },
+  { label:'슬리퍼 신기', icon:'🩴', ok:false },
+  { label:'반지·팔찌 착용', icon:'💍', ok:false },
+];
+
+function buildMission1(){
+  const panel = document.createElement('div');
+  panel.className = 'mission-panel active';
+  panel.id = 'panel-m1';
+  panel.innerHTML = `
+    <h2 class="section-title">🥽 미션 1. 안전 장비 갖추기</h2>
+    <p class="section-desc">알코올램프 실험을 시작하기 전, <b>실험 안전을 위해 꼭 필요한 것</b>을 모두 골라보세요. 위험한 선택은 피해야 해요!</p>
+    <div class="gear-grid" id="gearGrid"></div>
+    <button class="game-btn" id="gearSubmitBtn">✅ 제출하기</button>
+    <div class="mission-feedback" id="gearFeedback"></div>
+  `;
+  missionPanels.appendChild(panel);
+
+  const grid = document.getElementById('gearGrid');
+  const selected = new Set();
+  gearItems.forEach((g, idx) => {
+    const el = document.createElement('div');
+    el.className = 'gear-item';
+    el.id = 'gear-' + idx;
+    el.innerHTML = `<div class="g-icon">${g.icon}</div><div class="g-label">${g.label}</div><div class="g-tag"></div>`;
+    el.addEventListener('click', () => {
+      if(el.classList.contains('locked')) return;
+      if(selected.has(idx)){ selected.delete(idx); el.classList.remove('selected'); }
+      else { selected.add(idx); el.classList.add('selected'); }
+    });
+    grid.appendChild(el);
+  });
+
+  document.getElementById('gearSubmitBtn').addEventListener('click', function(){
+    this.disabled = true;
+    let correctPicked = 0, wrongPicked = 0;
+    gearItems.forEach((g, idx) => {
+      const el = document.getElementById('gear-' + idx);
+      el.classList.add('locked');
+      const isSelected = selected.has(idx);
+      if(g.ok && isSelected){ el.classList.add('correct-selected'); el.querySelector('.g-tag').textContent = '✔ 정답 선택'; correctPicked++; }
+      else if(!g.ok && isSelected){ el.classList.add('wrong-selected'); el.querySelector('.g-tag').textContent = '✘ 위험한 선택'; wrongPicked++; }
+      else if(g.ok && !isSelected){ el.classList.add('missed'); el.querySelector('.g-tag').textContent = '놓쳤어요'; }
+    });
+    const raw = Math.max(0, correctPicked - wrongPicked);
+    scores.m1 = (raw/4) * 25;
+    cleared.m1 = true;
+    const fb = document.getElementById('gearFeedback');
+    fb.classList.add('show', raw === 4 ? 'good' : 'mid');
+    fb.textContent = raw === 4
+      ? '🎉 완벽해요! 실험 전 안전 장비를 모두 잘 갖췄어요.'
+      : `아쉬워요. 정답 ${correctPicked}개, 위험한 선택 ${wrongPicked}개예요. 풀어헤친 머리, 헐렁한 옷, 슬리퍼, 액세서리는 화상이나 화재의 원인이 될 수 있어요.`;
+    updateTotalScore();
+  });
+}
+buildMission1();
+
+/* =========================================================
+   미션 2 — 알코올램프 올바른 사용 순서
+========================================================= */
+const alcoholSteps = [
+  '알코올의 양이 전체의 1/2~2/3인지 확인한다',
+  '심지의 길이(약 0.5cm)가 알맞은지 확인한다',
+  '실험대 주변에 인화성 물질이 없는지 확인한다',
+  '성냥불을 옆에서 비스듬히 대어 심지에 불을 붙인다',
+  '실험이 끝나면 뚜껑을 옆에서 씌워 불을 끈다',
+  '알코올램프가 완전히 식은 것을 확인하고 정리한다',
+];
+
+function buildOrderMission(containerId, title, desc, steps, onComplete, pointsFull){
+  const panel = document.getElementById(containerId);
+  const shuffled = steps.map((s, i) => ({ text:s, correctIndex:i })).sort(() => Math.random() - 0.5);
+  const picked = [];
+
+  const pool = document.createElement('div');
+  pool.className = 'order-pool';
+  shuffled.forEach((item, idx) => {
+    const el = document.createElement('div');
+    el.className = 'order-item';
+    el.id = containerId + '-item-' + idx;
+    el.innerHTML = `<span class="pick-num">${idx+1}</span><span>${item.text}</span>`;
+    el.dataset.correctIndex = item.correctIndex;
+    el.addEventListener('click', () => {
+      if(el.classList.contains('picked') || el.classList.contains('disabled')) return;
+      picked.push(el);
+      el.classList.add('picked');
+      el.querySelector('.pick-num').textContent = picked.length;
+      el.classList.add('disabled');
+      if(picked.length === steps.length){
+        checkBtn.disabled = false;
+      }
+    });
+    pool.appendChild(el);
+  });
+  panel.appendChild(pool);
+
+  const btnRow = document.createElement('div');
+  btnRow.className = 'order-btn-row';
+  const checkBtn = document.createElement('button');
+  checkBtn.className = 'game-btn';
+  checkBtn.textContent = '✅ 순서 확인하기';
+  checkBtn.disabled = true;
+  const retryBtn = document.createElement('button');
+  retryBtn.className = 'game-btn ghost';
+  retryBtn.textContent = '🔄 다시 고르기';
+  retryBtn.style.display = 'none';
+  btnRow.appendChild(checkBtn);
+  btnRow.appendChild(retryBtn);
+  panel.appendChild(btnRow);
+
+  const fb = document.createElement('div');
+  fb.className = 'mission-feedback';
+  panel.appendChild(fb);
+
+  checkBtn.addEventListener('click', () => {
+    const isCorrect = picked.every((el, i) => Number(el.dataset.correctIndex) === i);
+    picked.forEach((el, i) => {
+      el.classList.remove('disabled');
+      el.classList.add(Number(el.dataset.correctIndex) === i ? 'locked-correct' : 'locked-wrong');
+    });
+    checkBtn.style.display = 'none';
+    fb.classList.add('show');
+    if(isCorrect){
+      fb.classList.add('good');
+      fb.textContent = '🎉 정확해요! 올바른 순서를 모두 맞혔어요.';
+      onComplete(pointsFull);
+    } else {
+      fb.classList.add('mid');
+      fb.textContent = '아직 순서가 맞지 않아요. 초록색은 맞은 위치, 빨간색은 다시 생각해 볼 부분이에요. 다시 골라볼까요?';
+      retryBtn.style.display = 'inline-block';
+    }
+  });
+
+  retryBtn.addEventListener('click', () => {
+    picked.length = 0;
+    shuffled.forEach((item, idx) => {
+      const el = document.getElementById(containerId + '-item-' + idx);
+      el.className = 'order-item';
+      el.querySelector('.pick-num').textContent = idx + 1;
+    });
+    checkBtn.style.display = 'inline-block';
+    checkBtn.disabled = true;
+    retryBtn.style.display = 'none';
+    fb.classList.remove('show', 'good', 'mid');
+  });
+}
+
+function buildMission2(){
+  const panel = document.createElement('div');
+  panel.className = 'mission-panel';
+  panel.id = 'panel-m2';
+  panel.innerHTML = `
+    <h2 class="section-title">🕯️ 미션 2. 알코올램프 올바른 사용 순서</h2>
+    <p class="section-desc">아래 항목을 <b>올바른 사용 순서대로</b> 차례차례 눌러보세요.</p>
+  `;
+  missionPanels.appendChild(panel);
+
+  buildOrderMission('panel-m2', '', '', alcoholSteps, (pts) => {
+    if(!cleared.m2){ scores.m2 = pts; cleared.m2 = true; updateTotalScore(); }
+  }, 25);
+}
+buildMission2();
+
+/* =========================================================
+   미션 3 — 위험 vs 안전 판단 (OX)
+========================================================= */
+const oxScenarios = [
+  { desc:'알코올램프에 불을 붙이기 전 알코올 양을 확인했다.', answer:'safe', note:'알코올 양이 너무 많으면 위험해요. 미리 확인하는 것이 안전한 습관이에요.' },
+  { desc:'친구의 알코올램프에서 내 알코올램프로 불을 직접 옮겨 붙였다.', answer:'danger', note:'알코올이 흘러 옮겨붙으면 큰 화재로 이어질 수 있어요. 반드시 각자 성냥으로 불을 붙여야 해요.' },
+  { desc:'실험 중 실험용 앞치마를 입고 머리를 하나로 묶었다.', answer:'safe', note:'옷과 머리카락이 불에 닿지 않도록 미리 준비하는 좋은 습관이에요.' },
+  { desc:'촛불 실험 중 친구와 장난치며 자리를 뛰어다녔다.', answer:'danger', note:'불이 붙은 초 옆에서 뛰어다니면 화상이나 화재의 위험이 매우 커요.' },
+  { desc:'알코올램프의 불을 입으로 불어서 껐다.', answer:'danger', note:'입으로 불면 불똥이 튀어 주변으로 옮겨붙을 수 있어요. 반드시 뚜껑으로 덮어 꺼야 해요.' },
+  { desc:'실험이 끝난 알코올램프를 식기도 전에 바로 서랍에 넣었다.', answer:'danger', note:'뜨거운 상태로 정리하면 화상이나 화재의 위험이 있어요. 충분히 식힌 뒤 정리해야 해요.' },
+  { desc:'실험 중 이상 물질이 튈 수 있어 보안경을 썼다.', answer:'safe', note:'눈을 보호하는 것은 실험의 기본 안전 수칙이에요.' },
+  { desc:'뜨거운 시험관을 맨손으로 바로 잡았다.', answer:'danger', note:'화상을 입을 수 있어요. 반드시 집게를 사용해야 해요.' },
+  { desc:'실험이 끝난 성냥은 물에 완전히 적셔서 버렸다.', answer:'safe', note:'다 쓴 성냥에 불씨가 남아있을 수 있으므로 물에 적셔 버리는 것이 안전해요.' },
+  { desc:'실험실에서 헐렁한 긴 소매 옷이나 목도리를 착용한 채 실험했다.', answer:'danger', note:'헐렁한 옷자락이 불에 닿으면 순식간에 옮겨붙을 수 있어 위험해요.' },
+];
+
+function buildMission3(){
+  const panel = document.createElement('div');
+  panel.className = 'mission-panel';
+  panel.id = 'panel-m3';
+  panel.innerHTML = `
+    <h2 class="section-title">⚠️ 미션 3. 위험 vs 안전 판단</h2>
+    <p class="section-desc">아래 상황들이 <b>안전한지 위험한지</b> 판단해 보세요.</p>
+    <div class="ox-score-row">맞힌 개수: <span id="oxScoreLabel">0</span> / 10</div>
+    <div class="ox-grid" id="oxGrid"></div>
+  `;
+  missionPanels.appendChild(panel);
+
+  const grid = document.getElementById('oxGrid');
+  let answered = 0, correct = 0;
+
+  oxScenarios.forEach((s, idx) => {
+    const card = document.createElement('div');
+    card.className = 'ox-card';
+    card.innerHTML = `
+      <div class="ox-desc">${s.desc}</div>
+      <div class="ox-choice-row">
+        <button class="ox-btn safe-btn" data-v="safe">👍 안전해요</button>
+        <button class="ox-btn danger-btn" data-v="danger">⚠️ 위험해요</button>
+      </div>
+      <div class="ox-tag" id="oxTag-${idx}"></div>
+      <div class="ox-fb" id="oxFb-${idx}"></div>
+    `;
+    grid.appendChild(card);
+
+    card.querySelectorAll('.ox-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pick = btn.dataset.v;
+        card.querySelectorAll('.ox-btn').forEach(b => b.disabled = true);
+        const isCorrect = pick === s.answer;
+        card.classList.add('answered', isCorrect ? 'correct' : 'incorrect');
+        const tag = document.getElementById('oxTag-' + idx);
+        tag.classList.add('show', isCorrect ? 'ok' : 'no');
+        tag.textContent = isCorrect ? '✅ 정답이에요' : '❌ 다시 생각해 볼까요';
+        const fb = document.getElementById('oxFb-' + idx);
+        fb.classList.add('show');
+        fb.innerHTML = `<b>${s.answer === 'safe' ? '안전해요' : '위험해요'}</b> — ${s.note}`;
+
+        answered++; if(isCorrect) correct++;
+        document.getElementById('oxScoreLabel').textContent = correct;
+        if(answered === oxScenarios.length){
+          scores.m3 = (correct/oxScenarios.length) * 25;
+          cleared.m3 = true;
+          updateTotalScore();
+        }
+      });
+    });
+  });
+}
+buildMission3();
+
+/* =========================================================
+   미션 4 — 화재 대처법 (A: 몸에 불 / B: 소화기 순서)
+========================================================= */
+const bodyFireOptions = [
+  { v:'run', label:'큰 소리로 도움을 청하며 뛰어간다' },
+  { v:'stop', label:'멈춰서 엎드린 뒤 데굴데굴 구른다' },
+  { v:'water_drink', label:'물을 마신다' },
+  { v:'shake', label:'손으로 옷을 세게 털어낸다' },
+];
+const extinguisherSteps = [
+  '소화기의 안전핀을 뽑는다',
+  '바람을 등지고 노즐을 불쪽으로 향하게 한다',
+  '손잡이를 힘껏 움켜쥔다',
+  '빗자루로 쓸 듯이 약제를 골고루 뿌린다',
+];
+
+function buildMission4(){
+  const panel = document.createElement('div');
+  panel.className = 'mission-panel';
+  panel.id = 'panel-m4';
+  panel.innerHTML = `
+    <h2 class="section-title">🧯 미션 4. 화재 대처법</h2>
+    <p class="section-desc">몸에 불이 붙었을 때와 소화기를 사용할 때, 올바른 행동을 익혀 보세요.</p>
+    <div class="sub-title">A. 만약 내 몸에 불이 붙었다면?</div>
+    <div class="mc-options" id="mcOptions"></div>
+    <div class="mc-fb" id="mcFb"></div>
+
+    <div class="sub-divider">
+      <div class="sub-title">B. 소화기, 올바른 순서로 사용하기 (PASS 기법)</div>
+      <p class="section-desc" style="margin-bottom:10px;">아래 항목을 <b>올바른 순서대로</b> 차례차례 눌러보세요.</p>
+    </div>
+  `;
+  missionPanels.appendChild(panel);
+
+  // Part A
+  const mcOptions = document.getElementById('mcOptions');
+  bodyFireOptions.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'mc-opt';
+    btn.textContent = opt.label;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mc-opt').forEach(b => b.disabled = true);
+      const isCorrect = opt.v === 'stop';
+      btn.classList.add(isCorrect ? 'correct' : 'wrong');
+      if(!isCorrect){
+        document.querySelector('.mc-opt').parentElement.querySelectorAll('.mc-opt').forEach(b => {
+          if(b.textContent === bodyFireOptions.find(o => o.v === 'stop').label) b.classList.add('correct');
+        });
+      }
+      const fb = document.getElementById('mcFb');
+      fb.classList.add('show');
+      fb.innerHTML = isCorrect
+        ? '🎉 <b>정답이에요!</b> "Stop(멈추기) → Drop(엎드리기) → Roll(구르기)" — 이 세 동작이 몸에 붙은 불을 끄는 가장 안전한 방법이에요.'
+        : '🤔 정답은 <b>"멈춰서 엎드린 뒤 데굴데굴 구르기"</b>예요. 뛰어다니면 오히려 바람 때문에 불이 더 커질 수 있어요. 이 방법을 Stop-Drop-Roll이라고 해요.';
+      m4a_done = true; m4a_correct = isCorrect;
+      recalcM4();
+    });
+    mcOptions.appendChild(btn);
+  });
+
+  // Part B
+  let m4b_done = false;
+  buildOrderMission('panel-m4', '', '', extinguisherSteps, () => {
+    m4b_done = true;
+    recalcM4();
+  }, 12.5);
+
+  let m4a_done = false, m4a_correct = false;
+  function recalcM4(){
+    let s = 0;
+    if(m4a_done) s += m4a_correct ? 12.5 : 4;
+    if(m4b_done) s += 12.5;
+    scores.m4 = s;
+    if(m4a_done && m4b_done) cleared.m4 = true;
+    updateTotalScore();
+  }
+  window.__recalcM4Trigger = recalcM4;
+}
+buildMission4();
+
+/* wire mission panel visibility default */
+document.querySelectorAll('.mission-panel').forEach((p, i) => { if(i===0) p.classList.add('active'); });
+updateTotalScore();
+
+/* certificate rules */
+document.getElementById('certRules').innerHTML = `
+  <li><b>실험 전</b>에는 보안경, 묶은 머리, 실험용 앞치마 등 안전 장비를 꼭 갖춰요.</li>
+  <li><b>알코올램프</b>는 정해진 순서(양 확인 → 심지 확인 → 불붙이기 → 뚜껑으로 끄기 → 식힌 뒤 정리)를 지켜 사용해요.</li>
+  <li>불은 <b>입으로 불지 않고</b> 뚜껑이나 덮개로 꺼요.</li>
+  <li>몸에 불이 붙으면 <b>Stop(멈추기)–Drop(엎드리기)–Roll(구르기)</b>을 기억해요.</li>
+  <li>소화기는 <b>안전핀 뽑기 → 바람 등지기 → 손잡이 쥐기 → 빗자루처럼 뿌리기</b> 순서로 사용해요.</li>
+`;
+
+document.getElementById('resetBtn').addEventListener('click', () => location.reload());
+</script>
+</body>
+</html>
